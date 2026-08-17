@@ -1,0 +1,300 @@
+{
+  "name": "Automated Weekly Sales Report",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                1
+              ],
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "id": "d2edaab9-7116-4115-a3d1-08bce03ba15e",
+      "name": "Every Monday 9AM",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1grSCxk_UL_5nRv2JacDF3-A0giRZvri6mrgowvt67Mc",
+          "mode": "list",
+          "cachedResultName": "Weekly_Sales_Report_Dataset",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1grSCxk_UL_5nRv2JacDF3-A0giRZvri6mrgowvt67Mc/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1844248423,
+          "mode": "list",
+          "cachedResultName": "Sales",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1grSCxk_UL_5nRv2JacDF3-A0giRZvri6mrgowvt67Mc/edit#gid=1844248423"
+        },
+        "options": {}
+      },
+      "id": "40712f12-efc3-478b-b164-25d7389f3463",
+      "name": "Read Sales Data",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        224,
+        96
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pZJTBZYQwjDZk29f",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(i => i.json).filter(r => Object.keys(r).length > 0);\n\n// Step 4/6: define this-week and last-week windows\nconst now = new Date();\nconst cutoff7 = new Date();  cutoff7.setDate(now.getDate() - 7);\nconst cutoff14 = new Date(); cutoff14.setDate(now.getDate() - 14);\n\nconst recentRows = rows.filter(r => new Date(r.Date) >= cutoff7);\nconst lastWeekRows = rows.filter(r => {\n  const d = new Date(r.Date);\n  return d >= cutoff14 && d < cutoff7;\n});\n\nif (recentRows.length === 0) {\n  return [{ json: { empty: true } }];\n}\n\nlet totalRevenue = 0;\nlet totalUnits = 0;\nlet totalOrders = recentRows.length;\n\nconst products = {};\nconst customers = {};\nconst reps = {};\nconst regions = {};\nconst paymentStatus = {};\nconst dailyRevenue = {};\n\nfor (const row of recentRows) {\n    const revenue = Number(row[\"Revenue ($)\"] || 0);\n    const qty = Number(row[\"Qty\"] || 0);\n    totalRevenue += revenue;\n    totalUnits += qty;\n    products[row.Product] = (products[row.Product] || 0) + revenue;\n    customers[row.Customer] = (customers[row.Customer] || 0) + revenue;\n    reps[row[\"Sales Rep\"]] = (reps[row[\"Sales Rep\"]] || 0) + revenue;\n    regions[row.Region] = (regions[row.Region] || 0) + revenue;\n    paymentStatus[row[\"Payment Status\"]] = (paymentStatus[row[\"Payment Status\"]] || 0) + 1;\n    dailyRevenue[row.Date] = (dailyRevenue[row.Date] || 0) + revenue;\n}\n\n// Step 6: last week revenue + week-over-week change\nlet lastWeekRevenue = 0;\nfor (const row of lastWeekRows) {\n    lastWeekRevenue += Number(row[\"Revenue ($)\"] || 0);\n}\nlet revenueChangePct = null;\nif (lastWeekRevenue > 0) {\n    revenueChangePct = (((totalRevenue - lastWeekRevenue) / lastWeekRevenue) * 100).toFixed(1);\n}\n\nconst topProduct = Object.entries(products).sort((a,b)=>b[1]-a[1])[0] || [\"N/A\", 0];\nconst topCustomer = Object.entries(customers).sort((a,b)=>b[1]-a[1])[0] || [\"N/A\", 0];\nconst topRep = Object.entries(reps).sort((a,b)=>b[1]-a[1])[0] || [\"N/A\", 0];\nconst topRegion = Object.entries(regions).sort((a,b)=>b[1]-a[1])[0] || [\"N/A\", 0];\n\nreturn [{\n  json: {\n    empty: false,\n    totalRevenue,\n    totalOrders,\n    totalUnits,\n    averageOrderValue: totalOrders ? (totalRevenue/totalOrders).toFixed(2) : \"0.00\",\n    lastWeekRevenue,\n    revenueChangePct,\n    topProduct: topProduct[0],\n    topProductRevenue: topProduct[1],\n    topCustomer: topCustomer[0],\n    topCustomerRevenue: topCustomer[1],\n    topSalesRep: topRep[0],\n    topSalesRepRevenue: topRep[1],\n    topRegion: topRegion[0],\n    topRegionRevenue: topRegion[1],\n    paymentStatus,\n    dailyRevenue,\n    products,\n    regions,\n    reps\n  }\n}];"
+      },
+      "id": "c6aa36b0-49d0-4983-97c4-8bd1833e872b",
+      "name": "Analyze & Build Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "is-not-empty",
+              "leftValue": "={{ $json.empty }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "4f1ec4f6-d43c-4fa0-9297-8f00236a2242",
+      "name": "Has Data?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        672,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=You are a Senior Financial Analyst working for a growing e-commerce company.\n\nYour task is to create a professional Weekly Sales Report using ONLY the provided data.\n\nNever invent numbers.\nNever assume trends that are not present.\nIf information is unavailable, explicitly mention that.\n\nBusiness Metrics\n\nTotal Revenue\n${{$json.totalRevenue}}\n\nTotal Orders\n{{$json.totalOrders}}\n\nUnits Sold\n{{$json.totalUnits}}\n\nAverage Order Value\n${{$json.averageOrderValue}}\n\nLast Week Revenue\n${{$json.lastWeekRevenue}}\n\nRevenue Change vs Last Week (percent; positive = up, negative = down)\n{{ $json.revenueChangePct === null ? \"No prior week data available\" : $json.revenueChangePct + \"%\" }}\n\nTop Product\n{{$json.topProduct}}\n\nRevenue\n${{$json.topProductRevenue}}\n\nTop Customer\n{{$json.topCustomer}}\n\nCustomer Revenue\n${{$json.topCustomerRevenue}}\n\nTop Sales Representative\n{{$json.topSalesRep}}\n\nRevenue\n${{$json.topSalesRepRevenue}}\n\nTop Region\n{{$json.topRegion}}\n\nRevenue\n${{$json.topRegionRevenue}}\n\nPayment Status\n\n{{ JSON.stringify($json.paymentStatus) }}\n\nDaily Revenue\n\n{{ JSON.stringify($json.dailyRevenue) }}\n\nSales by Region\n\n{{ JSON.stringify($json.regions) }}\n\nSales by Representative\n\n{{ JSON.stringify($json.reps) }}\n\nProduct Revenue\n\n{{ JSON.stringify($json.products) }}\n\nWrite the report exactly in the following structure.\n\n# 📈 Weekly Sales Report\n\n## Executive Summary\n\nBegin with a single trend line comparing this week's revenue to last week's, using ▲ for an increase and ▼ for a decrease (e.g. \"Revenue ▲ 12% vs last week\"). If no prior week data is available, state that a week-over-week comparison isn't possible this week. Then write a concise summary of this week's performance.\n\n---\n\n## Key Performance Indicators\n\n• Total Revenue\n\n• Revenue vs Last Week\n\n• Total Orders\n\n• Total Units Sold\n\n• Average Order Value\n\n---\n\n## Best Performers\n\n• Top Product\n\n• Top Customer\n\n• Top Sales Representative\n\n• Best Region\n\n---\n\n## Payment Status Analysis\n\nExplain what the payment distribution indicates.\n\n---\n\n## Sales Insights\n\nProvide 4 meaningful observations based ONLY on the supplied data.\n\n---\n\n## Business Risks\n\nList any potential risks visible from the data.\n\n---\n\n## Recommendations\n\nProvide 5 practical recommendations that could improve sales performance next week.\n\nKeep the tone professional and suitable for a CEO.\n\nReturn Markdown only."
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "maxTokens": 2000
+        }
+      },
+      "id": "a03a391c-938e-49b6-ac82-9124261381f0",
+      "name": "Message a model",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        832,
+        -64
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "openAiApi": {
+          "id": "E745MCQe09JbQDc4",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "markdownToHtml",
+        "markdown": "={{ $('Message a model').item.json.output[0].content[0].text }}",
+        "options": {}
+      },
+      "id": "159a6fbb-1d38-4d75-990e-c0ab7e5d3282",
+      "name": "Markdown",
+      "type": "n8n-nodes-base.markdown",
+      "typeVersion": 1,
+      "position": [
+        1216,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "shivamthakur32008@gmail.com",
+        "subject": "=Weekly Sales Report — {{ $now.toFormat(\"MMM d, yyyy\") }}",
+        "message": "={{ $json.data }}",
+        "options": {
+          "appendAttribution": false,
+          "senderName": "Sales Reports"
+        }
+      },
+      "id": "db954e94-1578-4aea-9015-9d1281114bce",
+      "name": "Email Founder",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1408,
+        0
+      ],
+      "webhookId": "c52a885d-4e3e-4a85-9cc9-344cb221a174",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "dGNKOyExpRkH9uNg",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "shivamthakur32008@gmail.com",
+        "subject": "=Weekly Sales Report — No data for {{ $now.toFormat(\"MMM d, yyyy\") }}",
+        "emailType": "text",
+        "message": "Hi,\n\nNo sales data was found for this week, so there is no report. Please check the sheet.\n\n— Sales Reports (automated)",
+        "options": {}
+      },
+      "id": "59d699f5-2b53-468a-9a86-1a98f2959b3c",
+      "name": "Send a message",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        928,
+        192
+      ],
+      "webhookId": "87eb030f-ddb4-458c-ae6d-0977195e36b3",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "dGNKOyExpRkH9uNg",
+          "name": "Gmail account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Every Monday 9AM": {
+      "main": [
+        [
+          {
+            "node": "Read Sales Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Sales Data": {
+      "main": [
+        [
+          {
+            "node": "Analyze & Build Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze & Build Report": {
+      "main": [
+        [
+          {
+            "node": "Has Data?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Data?": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Markdown",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Markdown": {
+      "main": [
+        [
+          {
+            "node": "Email Founder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "errorWorkflow": "E6nR8W4rCOEB16eh"
+  },
+  "versionId": "498d0027-0d6d-499f-a86e-3c24747e3524",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a7ac81e5ae9d5fa29e54322ae861e42ebc40c34a217443715f97a558451118cd"
+  },
+  "nodeGroups": [],
+  "id": "Mr9FjuoVFTZ8SdoJ",
+  "tags": []
+}

@@ -1,0 +1,69 @@
+{
+  "name": "Workflow Failure Alerts",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "9bff3c7f-cf9b-46e8-9d05-6ac7e5910703",
+      "name": "On Workflow Error",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "shivamthakur32008@gmail.com",
+        "subject": "=⚠️ Workflow FAILED: {{ $json.workflow.name }}",
+        "emailType": "text",
+        "message": "=A workflow failed to run.\n\nWorkflow: {{ $json.workflow.name }}\nFailed node: {{ $json.execution.lastNodeExecuted }}\nError: {{ $json.execution.error.message }}\nExecution ID: {{ $json.execution.id }}\nTime: {{ $now.toFormat(\"MMM d, yyyy HH:mm\") }}\n\nOpen the execution to debug: {{ $json.execution.url }}",
+        "options": {
+          "appendAttribution": false,
+          "senderName": "n8n Alerts"
+        }
+      },
+      "id": "0c8f31a0-6ede-4528-9cb0-55a9db654781",
+      "name": "Email Me The Error",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        0
+      ],
+      "webhookId": "5529765b-796e-4b22-8bca-50926e7ddc78",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "dGNKOyExpRkH9uNg",
+          "name": "Gmail account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On Workflow Error": {
+      "main": [
+        [
+          {
+            "node": "Email Me The Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "af06497c-2992-4267-964f-3382375b2104",
+  "meta": {
+    "instanceId": "a7ac81e5ae9d5fa29e54322ae861e42ebc40c34a217443715f97a558451118cd"
+  },
+  "nodeGroups": [],
+  "id": "E6nR8W4rCOEB16eh",
+  "tags": []
+}
