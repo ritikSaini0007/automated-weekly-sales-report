@@ -1,70 +1,131 @@
-📈 Automated Weekly Sales Report
-An n8n automation that reads sales data from Google Sheets, analyzes it, and emails a professional AI-written weekly report to the founder — every Monday at 9 AM, hands-free.
+# 📈 Automated Weekly Sales Report
 
-Built as part of a finance-automation portfolio.
+An n8n automation workflow that collects sales data from Google Sheets, analyzes weekly performance, and emails an AI-generated sales report to the founder every Monday at 9 AM.
 
-🎯 What it does
-Every Monday morning, this workflow:
+Built as part of a **Data Analytics & Finance Automation Portfolio**.
 
-Reads the latest sales data from a Google Sheet
-Analyzes the last 7 days — revenue, orders, units, top product / customer / rep / region, and payment status
-Compares this week vs last week (week-over-week % change, e.g. Revenue ▲ 12% vs last week)
-Generates a clean, CEO-ready report using AI (GPT-4o-mini)
-Emails it as formatted HTML to the founder's inbox
-If there's no data for the week, it sends a short "no data" notice instead of a broken report. If the workflow ever fails, a separate error-alert workflow emails a warning.
+## 🎯 What It Does
 
-🧩 How it works
-Every Monday 9AM (Schedule Trigger)
-        │
-        ▼
-Read Sales Data (Google Sheets)
-        │
-        ▼
-Analyze & Build Report (Code node)
-        │
-        ▼
-     Has Data? (IF)
-     ┌──────┴───────┐
-   true            false
-     │                │
-     ▼                ▼
-Message a model    "No data
-  (OpenAI)          this week"
-     │              email
-     ▼
-  Markdown → HTML
-     │
-     ▼
- Email Founder (Gmail)
-✨ Key features
-Week-over-week comparison — trend line (▲/▼ %) at the top of every report
-Math done in code, words done by AI — numbers are always accurate; AI only phrases them
-Edge-case safe — handles empty sheets and divide-by-zero gracefully
-Professional HTML email — Markdown converted to clean formatting
-Error alerting — a linked error workflow notifies on any failure
-Fully scheduled — zero manual effort once live
-🛠️ Tech / Nodes used
-Component	Node
-Trigger	Schedule Trigger (weekly, Mon 9 AM)
-Data source	Google Sheets
-Analysis	Code node (JavaScript)
-Branching	IF node
-AI report	OpenAI (GPT-4o-mini)
-Formatting	Markdown → HTML
-Delivery	Gmail
-Reliability	Error Trigger workflow
-📊 Sample report structure
-📈 Executive Summary (with week-over-week trend line)
-Key Performance Indicators
-Best Performers
-Payment Status Analysis
-Sales Insights
-Business Risks
-Recommendations
-🚀 Setup
-Import the workflow into your n8n instance
-Connect your Google Sheets, Gmail, and OpenAI credentials
-Point the Google Sheets node at your sales sheet
-Set the recipient email in the Gmail node
-Publish — reports start arriving every Monday at 9 AM
+Every Monday morning, this workflow automatically:
+
+- Reads sales data from Google Sheets.
+- Analyzes the last 7 days of sales performance.
+- Calculates revenue, orders, units sold, and top-performing products, customers, sales representatives, and regions.
+- Tracks payment status.
+- Compares the current week with the previous week using week-over-week percentage changes.
+- Generates a professional sales report using OpenAI GPT-4o-mini.
+- Converts the report into formatted HTML and sends it through Gmail.
+- Sends a no-data notification if no sales records are available.
+- Uses a separate error workflow to send alerts when the automation fails.
+
+## ⚙️ Workflow Architecture
+
+```text
+Schedule Trigger (Every Monday, 9 AM)
+                 |
+                 ▼
+       Read Sales Data
+        (Google Sheets)
+                 |
+                 ▼
+      Analyze & Build Report
+           (JavaScript)
+                 |
+                 ▼
+            Has Data?
+            /       \
+          Yes        No
+           |          |
+           ▼          ▼
+    Generate AI    No-Data Email
+       Report
+           |
+           ▼
+     Markdown to HTML
+           |
+           ▼
+      Send Email
+        (Gmail)
+
+ Separate Error Workflow
+           |
+           ▼
+       Error Alert
+```
+
+## ✨ Key Features
+
+- **Weekly Performance Analysis:** Automatically calculates important sales KPIs.
+- **Week-over-Week Comparison:** Shows percentage changes in revenue and other metrics.
+- **AI-Powered Reporting:** Uses OpenAI to turn calculated results into clear business insights.
+- **Accurate Calculations:** Performs numerical calculations in JavaScript and uses AI for report writing.
+- **Error Handling:** Handles empty datasets and division-by-zero cases.
+- **Professional Email Reports:** Delivers a structured HTML report directly to the founder.
+- **Automated Scheduling:** Runs every Monday at 9 AM without manual intervention once configured.
+- **Failure Notifications:** Sends an alert through a separate error workflow when a failure is captured.
+
+## 🛠️ Technologies Used
+
+| Component | Technology |
+|---|---|
+| Workflow Automation | n8n |
+| Data Source | Google Sheets |
+| Data Processing | JavaScript |
+| AI Report Generation | OpenAI GPT-4o-mini |
+| Conditional Logic | n8n IF Node |
+| Report Formatting | Markdown to HTML |
+| Email Delivery | Gmail |
+| Error Monitoring | n8n Error Trigger |
+
+## 📊 Sample Report Structure
+
+The generated weekly sales report includes:
+
+1. Executive Summary
+2. Key Performance Indicators (KPIs)
+3. Week-over-Week Performance Comparison
+4. Best-Performing Products and Customers
+5. Sales Representative and Regional Performance
+6. Payment Status Analysis
+7. Business Insights and Risks
+8. Actionable Recommendations
+
+## 🚀 Setup Instructions
+
+### 1. Import the Workflow
+Import the n8n workflow JSON file into your n8n instance.
+
+### 2. Connect Credentials
+Configure your credentials for:
+- Google Sheets
+- Gmail
+- OpenAI
+
+### 3. Configure the Sales Sheet
+Select your Google Spreadsheet and specify the sheet containing your sales records.
+
+### 4. Configure Email Delivery
+Set the founder's email address in the Gmail node.
+
+### 5. Configure Scheduling
+Set the Schedule Trigger to run every Monday at 9 AM. Ensure your n8n timezone is configured correctly.
+
+### 6. Activate the Workflow
+Test the workflow with sample sales data, verify the calculations and email output, and activate it.
+
+Reports will then be generated automatically according to the configured schedule.
+
+## 💼 Business Value
+
+This automation helps businesses:
+
+- Reduce manual sales reporting.
+- Monitor weekly business performance.
+- Identify sales trends and top performers.
+- Detect potential payment and sales issues.
+- Make faster, data-driven decisions.
+
+## 👨‍💻 Portfolio Project
+
+This project demonstrates practical skills in **n8n workflow automation, JavaScript data processing, Google Sheets integration, AI-powered reporting, KPI analysis, and automated email delivery**.
 
